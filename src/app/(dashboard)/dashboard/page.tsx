@@ -1,0 +1,141 @@
+"use client";
+
+import { useState } from "react";
+import { CalendarClock, DollarSign, Users, Activity, Plus } from "lucide-react";
+
+import { PageHeader } from "@/components/molecules/page-header";
+import { StatCard } from "@/components/molecules/stat-item";
+import { AreaTrendChart } from "@/features/dashboard/components/area-trend-chart";
+import { SimpleBarChart } from "@/features/dashboard/components/simple-bar-chart";
+import { DonutChart } from "@/features/dashboard/components/donut-chart";
+import { LatestAppointmentsList } from "@/features/appointments/components/latest-appointments-list";
+import { DoctorScheduleWidget } from "@/features/appointments/components/doctor-schedule-widget";
+import { ScheduleAppointmentDialog } from "@/features/appointments/components/schedule-appointment-dialog";
+
+import { Button } from "@/components/atoms/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
+import { Calendar } from "@/components/molecules/calendar";
+
+import {
+  dashboardStats,
+  weeklyRevenue,
+  appointmentsBySpecialty,
+  invoiceStatusBreakdown,
+  latestAppointments,
+  upcomingDoctorSchedule,
+} from "@/features/dashboard/constants/dashboard-mock";
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export default function DashboardPage() {
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+
+  return (
+    <div className="space-y-6 pb-10">
+      <PageHeader
+        title="Dashboard"
+        description="Welcome back — here's what's happening at your clinic today."
+        action={
+          <Button size="sm" onClick={() => setScheduleOpen(true)}>
+            <Plus className="size-4" />
+            New appointment
+          </Button>
+        }
+      />
+
+      <ScheduleAppointmentDialog open={scheduleOpen} onOpenChange={setScheduleOpen} />
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Total Patients"
+          value={dashboardStats.totalPatients.value.toLocaleString()}
+          icon={Users}
+          trend={{ value: dashboardStats.totalPatients.trend, label: "vs last month" }}
+        />
+        <StatCard
+          label="Appointments Today"
+          value={dashboardStats.todayAppointments.value}
+          icon={CalendarClock}
+          trend={{ value: dashboardStats.todayAppointments.trend, label: "vs yesterday" }}
+        />
+        <StatCard
+          label="Revenue (MTD)"
+          value={formatCurrency(dashboardStats.monthlyRevenue.value)}
+          icon={DollarSign}
+          trend={{ value: dashboardStats.monthlyRevenue.trend, label: "vs last month" }}
+        />
+        <StatCard
+          label="Active Doctors"
+          value={dashboardStats.activeDoctors.value}
+          icon={Activity}
+        />
+      </div>
+
+      {/* Revenue + Invoice status */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Weekly revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AreaTrendChart data={weeklyRevenue} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Invoice status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DonutChart data={invoiceStatusBreakdown} />
+            <div className="mt-2 flex flex-wrap justify-center gap-3 text-xs">
+              {invoiceStatusBreakdown.map((d) => (
+                <span key={d.label} className="flex items-center gap-1.5">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: d.color }}
+                  />
+                  {d.label} &middot; {d.value}%
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Appointments by specialty + Calendar */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Appointments by specialty</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SimpleBarChart data={appointmentsBySpecialty} color="var(--color-chart-4)" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Calendar</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Calendar mode="single" className="rounded-md" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Latest appointments + Doctor schedule */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <LatestAppointmentsList appointments={latestAppointments} />
+        </div>
+        <DoctorScheduleWidget doctors={upcomingDoctorSchedule} />
+      </div>
+    </div>
+  );
+}
